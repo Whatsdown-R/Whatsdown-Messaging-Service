@@ -11,7 +11,7 @@ namespace MessageService.Model
         public string IdentificationCode{ get;  set; }
         public string Message { get;  set; }
         public string Type { get;  set; }
-        public DateTime date { get; set; }
+       
 
         public MessageView()
         {
@@ -22,7 +22,7 @@ namespace MessageService.Model
             this.IdentificationCode = identificationCode;
             this.Message = message;
             this.Type = type;
-            this.date = DateTime.Now;
+     
         }
 
      

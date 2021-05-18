@@ -1,17 +1,11 @@
+using MessageService.Hubs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Whatsdown_Authentication_Service.Data;
 
 namespace MessageService
@@ -31,11 +25,21 @@ namespace MessageService
             services.AddControllers();
             services.AddSwaggerGenNewtonsoftSupport();
 
-            services.AddDbContext<ChatContext>(options => {
-                options.UseInMemoryDatabase("ChatDB");
-            });
+            services.AddDbContext<ChatContext>(options =>
+            options.UseMySql(Configuration.GetConnectionString("MessageDB")));
             services.AddSwaggerGen(c => c.SwaggerDoc("v1", new OpenApiInfo { Title = "WhatsDown_MessageService", Version = "v1" }));
-     
+         
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy", builder => builder
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .SetIsOriginAllowed(x => true)
+                    .AllowCredentials());
+            });
+            services.AddSignalR();
+            
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -51,16 +55,18 @@ namespace MessageService
 
             }
 
+            app.UseCors("CorsPolicy");
             app.UseHttpsRedirection();
-
+           
             app.UseRouting();
 
             app.UseAuthorization();
 
-
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapHub<ChatHub>("/chathub");
                 endpoints.MapControllers();
+               
             });
         }
     }

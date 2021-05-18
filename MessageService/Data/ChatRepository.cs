@@ -16,20 +16,20 @@ namespace MessageService.Data
             this.dbContext = chatContext;
         }
 
-        public bool PostMessage(MessageView message)
+        public Message PostMessage(MessageView message)
         {
             try
             {
                 Message postMessage = new Message(Guid.NewGuid().ToString(), message.SenderId, message.IdentificationCode, message.Message, message.Type, DateTime.Now);
                 this.dbContext.Messages.Add(postMessage);
                 this.dbContext.SaveChanges();
-                return true;
+                return postMessage;
             }
             catch(Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
-            return false;
+            return null;
 
         }
 
@@ -57,7 +57,7 @@ namespace MessageService.Data
         {
             try
             {
-                return this.dbContext.Messages.Where(messages => messages.identificationCode == identification).ToList();
+                return this.dbContext.Messages.Where(messages => messages.identificationCode == identification).OrderByDescending(date => date.date).ToList();
             
             }
             catch (Exception ex)

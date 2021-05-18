@@ -16,7 +16,29 @@ namespace MessageService.Logic
             this.repository = new ChatRepository(context);
         }
 
-        public bool PostMessage(MessageView view)
+        public Message PostMessage(MessageView view)
+        {
+            if (!CheckIfNull(view))
+                return null;
+
+            return this.repository.PostMessage(view);
+            
+
+        }
+
+        public Message PostImage(MessageView view)
+        {
+            if (!CheckIfNull(view))
+                return null;
+
+            int found = view.Message.IndexOf(",") + 1;
+            view.Message = view.Message.Remove(0, found);
+            return this.repository.PostMessage(view);
+
+
+        }
+
+        private bool CheckIfNull(MessageView view)
         {
             if (view.IdentificationCode == null)
             {
@@ -36,21 +58,24 @@ namespace MessageService.Logic
             {
                 return false;
             }
-            
-            this.repository.PostMessage(view);
 
             return true;
-
         }
 
-
         //This can only be called if the person has access to the group/friend
-        public List<Message> GetMessages(string identification)
+        public List<SendMessageView> GetMessages(string identification)
         {
             if (identification == null)
                 return null;
 
-            return this.repository.GetAllMessages(identification);
+             List<Message> messages =this.repository.GetAllMessages(identification);
+            List<SendMessageView> views = new List<SendMessageView>();
+            foreach (Message item in messages)
+            {
+                views.Add(new SendMessageView(item.senderId, item.identificationCode, item.message, item.type , item.date));
+            }
+            views.Sort((x, y) => x.date.CompareTo(y.date));
+            return views;
         }
 
         public bool DeleteMessage(DeleteMessageView message)

@@ -9,7 +9,8 @@ namespace Whatsdown_Authentication_Service.Data
 
         public ChatContext(DbContextOptions<ChatContext> options) : base(options)
         {
-
+            if (!Database.IsInMemory())
+                Database.EnsureCreated();
         }
 
         public DbSet<Message> Messages { get; set; }
