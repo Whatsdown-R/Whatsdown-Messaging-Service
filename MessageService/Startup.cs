@@ -22,9 +22,9 @@ namespace MessageService
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+
             services.AddControllers();
             services.AddSwaggerGenNewtonsoftSupport();
-
             services.AddDbContext<ChatContext>(options =>
             options.UseMySql(Configuration.GetConnectionString("MessageDB")));
             services.AddSwaggerGen(c => c.SwaggerDoc("v1", new OpenApiInfo { Title = "WhatsDown_MessageService", Version = "v1" }));

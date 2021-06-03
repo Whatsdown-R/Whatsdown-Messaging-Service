@@ -1,4 +1,5 @@
-﻿using MessageService.Hubs;
+﻿using MessageService.Exceptions;
+using MessageService.Hubs;
 using MessageService.Logic;
 using MessageService.Model;
 
@@ -6,6 +7,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using RabbitMQ.Producer;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,68 +21,115 @@ namespace MessageService.Controllers
     [ApiController]
     public class ChatController : ControllerBase
     {
-        private Microsoft.AspNetCore.SignalR.IHubContext<ChatHub> _context;
+        private IHubContext<ChatHub> _context;
         private readonly IConfiguration _config;
+        private RabbitMQProducer rabbitMQProducer;
+        private readonly ILogger<ChatController> logger;
         ChatLogic logic;
-        public ChatController(IConfiguration config, ChatContext context, Microsoft.AspNetCore.SignalR.IHubContext<ChatHub> _context)
+        public ChatController(IConfiguration config, ChatContext context,IHubContext<ChatHub> _context, ILogger<ChatController> logger)
         {
             this.logic = new ChatLogic(context);
             this._config = config;
             this._context = _context;
+            this.logger = logger;
+            //this.rabbitMQProducer = new RabbitMQProducer("amqp://guest:guest@localhost:5672");
         }
 
         [HttpPost, Route("group/join")]
         public IActionResult JoinGroups(JoinGroupView view)
         {
-            if(view.connectionId != null)
+            try {
+            if(view.connectionId == null || view.groups == null)
+            {
+                logger.LogWarning("Tried to joing a group with no arguments");
+                return BadRequest("Something went wrong.");
+            }
             foreach (string item in view.groups)
             {
                 _context.Groups.AddToGroupAsync(view.connectionId, item);
             }
-           
+            }catch(Exception ex)
+            {
+                return Unauthorized();
+            }
+
+
             return Ok();
         }
 
         [HttpGet, Route("group/{identificationCode}")]
         public IActionResult GetMessages(string identificationCode)
         {
-            IActionResult response = Unauthorized();
-            List<SendMessageView> messages = logic.GetMessages(identificationCode);
-            response = Ok(new { messages = messages });
-            return response;
+            try
+            {
+                IActionResult response = Unauthorized();
+                List<SendMessageView> messages = logic.GetMessages(identificationCode);
+                response = Ok(new { messages = messages });
+                return response;
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest("The id may not be empty or null.");
+            }
+            catch(Exception ex)
+            {
+                return Unauthorized();
+            }
+           
         }
 
         [HttpPost]
         public async Task<IActionResult> PostTextMessage(MessageView view)
         {
-            
-            IActionResult response = Unauthorized();
-            Message result = logic.PostMessage(view);
-
-            if (result != null)
+            IActionResult response;
+            try
             {
-                await _context.Clients.Group(view.IdentificationCode).SendAsync("Groupsend", new SendMessageView(result.senderId, result.identificationCode, result.message, result.type, result.date));
-                response = Ok();
+           
+                Message result = logic.PostMessage(view);
+
+                if (result != null)
+                {
+                    await _context.Clients.Group(view.IdentificationCode).SendAsync("Groupsend", new SendMessageView(result.senderId, result.identificationCode, result.message, result.type, result.date));
+                    response = Ok();
+                }
+                else
+                    response = BadRequest();
+            }catch(ArgumentNullException ex)
+            {
+                return BadRequest("Something went wrong");
+            } catch(LengthException ex)
+            {
+                return BadRequest(ex.Message);
             }
-            else
-                response = BadRequest();
+
             return response;
         }
         [HttpPost, Route("image"), DisableRequestSizeLimit]
         public async Task<IActionResult> PostImageMessage([FromForm] MessageView view)
         {
-
-            IActionResult response = Unauthorized();
-            Message result = logic.PostImage(view);
-
-            if (result != null)
+            try
             {
-                await _context.Clients.Group(view.IdentificationCode).SendAsync("Groupsend", new SendMessageView(result.senderId, result.identificationCode, result.message, result.type, result.date));
-                response = Ok();
+                IActionResult response;
+                Message result = logic.PostImage(view);
+
+                if (result != null)
+                {
+                    await _context.Clients.Group(view.IdentificationCode).SendAsync("Groupsend", new SendMessageView(result.senderId, result.identificationCode, result.message, result.type, result.date));
+                    response = Ok();
+                }
+                else
+                    response = BadRequest();
             }
-            else
-                response = BadRequest();
-            return response;
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest("Something went wrong");
+            }
+            catch (LengthException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+            return Unauthorized();
         }
 
         [HttpDelete]
@@ -92,6 +142,28 @@ namespace MessageService.Controllers
                 response = Ok();
           
             return response;
+        }
+
+
+        [HttpPost, Route("friends/recent")]
+        public IActionResult GetMostRecentMessages([FromBody]List<string> identificationCode)
+        {
+            try
+            {
+                IActionResult response = Unauthorized();
+                List<RecentMessageView> messages = logic.GetMostRecentMessages(identificationCode.ToList());
+                response = Ok(new { messages = messages });
+                return response;
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest("The id may not be empty or null.");
+            }
+            catch (Exception ex)
+            {
+                return Unauthorized();
+            }
+
         }
     }
 }

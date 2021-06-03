@@ -67,5 +67,34 @@ namespace MessageService.Data
             return null;
 
         }
+
+        public List<RecentMessageView> GetMostRecentMessage(List<string> identificationcode)
+        {
+            List<RecentMessageView> recentMessages = new List<RecentMessageView>();
+            foreach (string identification in identificationcode)
+            {
+                Message message = dbContext.Messages.Where(c => c.identificationCode == identification).OrderByDescending(c => c.date).FirstOrDefault();
+                if (message == null)
+                {
+                    continue;
+                }
+              
+                RecentMessageView view = new RecentMessageView();
+                view.identificationCode = identification;
+                //view.date = message.date;
+                view.senderId = message.senderId;
+                if (message != null)
+                {
+                    if (message.message.Length > 15)
+                    {
+                        string temp = message.message.Substring(0, 14);
+                        temp +=  "...";
+                        view.mostRecentMessage = temp;
+                    }
+                    recentMessages.Add(view);
+                }
+            }
+            return recentMessages;
+        }
     }
 }

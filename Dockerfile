@@ -16,7 +16,7 @@ WORKDIR "/source/${PATH_WITH_SPACE}"
 RUN dotnet publish -c release -o /app
 
 # final stage/image
-FROM mcr.microsoft.com/dotnet/aspnet:5.0
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
 WORKDIR /app
 COPY --from=build /app ./
 ENTRYPOINT ["dotnet", "Whatsdown-Message-Service.dll"]
