@@ -55,11 +55,11 @@ namespace MessageService
 
             }
 
-            app.UseCors("CorsPolicy");
+       
             app.UseHttpsRedirection();
-           
+            
             app.UseRouting();
-
+            app.UseCors("CorsPolicy");
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
@@ -68,6 +68,7 @@ namespace MessageService
                 endpoints.MapControllers();
                
             });
+            app.UseWebSockets();
         }
     }
 }
