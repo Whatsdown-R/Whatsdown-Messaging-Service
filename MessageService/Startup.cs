@@ -38,6 +38,7 @@ namespace MessageService
                     .AllowCredentials());
             });
             services.AddSignalR();
+            services.AddLogging();
             
 
         }

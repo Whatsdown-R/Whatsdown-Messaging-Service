@@ -39,7 +39,8 @@ namespace MessageService.Controllers
         public IActionResult JoinGroups(JoinGroupView view)
         {
             try {
-            if(view.connectionId == null || view.groups == null)
+                logger.LogDebug("Trying to join group");
+            if (view.connectionId == null || view.groups == null)
             {
                 logger.LogWarning("Tried to joing a group with no arguments");
                 return BadRequest("Something went wrong.");
@@ -50,6 +51,8 @@ namespace MessageService.Controllers
             }
             }catch(Exception ex)
             {
+                logger.LogError(ex.Message);
+                Console.WriteLine(ex.Message);
                 return Unauthorized();
             }
 
@@ -89,7 +92,10 @@ namespace MessageService.Controllers
 
                 if (result != null)
                 {
-                    await _context.Clients.Group(view.IdentificationCode).SendAsync("Groupsend", new SendMessageView(result.senderId, result.identificationCode, result.message, result.type, result.date));
+                    logger.LogDebug("Starting websocket with following parameters: senderId = " + result.senderId + " || IdentificationCode = " + result.identificationCode +
+                        " || message = " + result.message + " || Type = " + result.type);
+
+                       await _context.Clients.Group(view.IdentificationCode).SendAsync("Groupsend", new SendMessageView(result.senderId, result.identificationCode, result.message, result.type, result.date));
                     response = Ok();
                 }
                 else
@@ -150,6 +156,8 @@ namespace MessageService.Controllers
         {
             try
             {
+                Console.WriteLine("Attempting to get friend messages");
+
                 IActionResult response = Unauthorized();
                 List<RecentMessageView> messages = logic.GetMostRecentMessages(identificationCode.ToList());
                 response = Ok(new { messages = messages });
