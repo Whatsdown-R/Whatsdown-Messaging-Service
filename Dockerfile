@@ -4,7 +4,7 @@ FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 WORKDIR /source
 
 # copy csproj and restore as distinct layers
-ENV PATH_WITH_SPACE="MessageService"
+ENV PATH_WITH_SPACE="Whatsdown-Message-Service"
 copy . ./
 # COPY *.sln .
 
