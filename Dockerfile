@@ -4,7 +4,7 @@ FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 WORKDIR /source
 
 # copy csproj and restore as distinct layers
-ENV PATH_WITH_SPACE="Whatsdown-Message-Service"
+ENV PATH_WITH_SPACE="MessageService"
 copy . ./
 # COPY *.sln .
 
@@ -19,4 +19,4 @@ RUN dotnet publish -c release -o /app
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
 WORKDIR /app
 COPY --from=build /app ./
-ENTRYPOINT ["dotnet", "Whatsdown-Message-Service.dll"]
+ENTRYPOINT ["dotnet", "MessageService.dll"]
