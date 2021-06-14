@@ -2,7 +2,7 @@
 using MessageService.Hubs;
 using MessageService.Logic;
 using MessageService.Model;
-
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -12,6 +12,7 @@ using RabbitMQ.Producer;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Whatsdown_Authentication_Service.Data;
 
@@ -81,14 +82,16 @@ namespace MessageService.Controllers
            
         }
 
-        [HttpPost]
+        [HttpPost, Authorize]
         public async Task<IActionResult> PostTextMessage(MessageView view)
         {
+            
+            string id = User.FindFirstValue("id");
             IActionResult response;
             try
             {
-           
-                Message result = logic.PostMessage(view);
+            
+                Message result = logic.PostMessage(view, id);
 
                 if (result != null)
                 {
@@ -110,13 +113,14 @@ namespace MessageService.Controllers
 
             return response;
         }
-        [HttpPost, Route("image"), DisableRequestSizeLimit]
+        [HttpPost, Route("image"), DisableRequestSizeLimit, Authorize]
         public async Task<IActionResult> PostImageMessage([FromForm] MessageView view)
         {
+            string id = User.FindFirstValue("id");
             try
             {
                 IActionResult response;
-                Message result = logic.PostImage(view);
+                Message result = logic.PostImage(view, id);
 
                 if (result != null)
                 {

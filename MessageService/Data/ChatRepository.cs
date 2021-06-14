@@ -16,11 +16,11 @@ namespace MessageService.Data
             this.dbContext = chatContext;
         }
 
-        public Message PostMessage(MessageView message)
+        public Message PostMessage(MessageView message, string id)
         {
             try
             {
-                Message postMessage = new Message(Guid.NewGuid().ToString(), message.SenderId, message.IdentificationCode, message.Message, message.Type, DateTime.Now);
+                Message postMessage = new Message(Guid.NewGuid().ToString(), id, message.IdentificationCode, message.Message, message.Type, DateTime.Now);
                 this.dbContext.Messages.Add(postMessage);
                 this.dbContext.SaveChanges();
                 return postMessage;

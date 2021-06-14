@@ -21,31 +21,31 @@ namespace MessageService.Logic
           
         }
 
-        public Message PostMessage(MessageView view)
+        public Message PostMessage(MessageView view, string id)
         {
-            if (!CheckIfNull(view))
+            if (!CheckIfNull(view, id))
                 return null;
 
-            return this.repository.PostMessage(view);
+            return this.repository.PostMessage(view , id);
             
 
         }
 
-        public Message PostImage(MessageView view)
+        public Message PostImage(MessageView view, string id)
         {
-            if (!CheckIfNull(view))
+            if (!CheckIfNull(view, id))
                 return null;
 
         /*    int found = view.Message.IndexOf(",") + 1;
             view.Message = view.Message.Remove(0, found);*/
-            return this.repository.PostMessage(view);
+            return this.repository.PostMessage(view, id);
 
 
         }
 
-        private bool CheckIfNull(MessageView view)
+        private bool CheckIfNull(MessageView view, string id)
         {
-            if (view.IdentificationCode == null || view.Message == null || view.SenderId == null)
+            if (view.IdentificationCode == null || view.Message == null || id == null)
             {
                
                 logger.Error("Cant post a message if it has null values");
