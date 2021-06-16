@@ -113,7 +113,7 @@ namespace MessageService.Controllers
 
             return response;
         }
-        [HttpPost, Route("image"), DisableRequestSizeLimit, Authorize]
+        [HttpPost, Route("image"), DisableRequestSizeLimit ,RequestSizeLimit(10000000) , Authorize]
         public async Task<IActionResult> PostImageMessage([FromForm] MessageView view)
         {
             string id = User.FindFirstValue("id");
