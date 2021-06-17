@@ -14,20 +14,22 @@ namespace MessageService.Logic
     public class ChatLogic
     {
         ChatRepository repository;
-        private readonly Logger logger = LogManager.GetCurrentClassLogger();
-        public ChatLogic(ChatContext context)
+        private readonly ILogger<ChatLogic> logger;
+        public ChatLogic(ChatContext context, ILogger<ChatLogic> logger)
         {
             this.repository = new ChatRepository(context);
-          
+            this.logger = logger;
         }
 
         public Message PostMessage(MessageView view, string id)
         {
+            logger.LogInformation("PostMessage() Called in ChatLogic");
             if (!CheckIfNull(view, id))
                 return null;
 
-            return this.repository.PostMessage(view , id);
-            
+            Message message = this.repository.PostMessage(view , id);
+            logger.LogInformation("PostMessage() was succesfull in ChatLogic");
+            return message;
 
         }
 
@@ -48,12 +50,13 @@ namespace MessageService.Logic
             if (view.IdentificationCode == null || view.Message == null || id == null)
             {
                
-                logger.Error("Cant post a message if it has null values");
+                logger.LogWarning("CheckIfNull() has found null values");
                 throw new ArgumentNullException();
             }
             
             if (view.Message.Length > 250 && view.Type != "IMAGE")
             {
+                logger.LogWarning("CheckIfNull() has found that the message length is over the 250 characters.");
                 throw new LengthException("Message length may only be 250 characters.");
             }
             // Also add auth to check if sender is the real sender
@@ -67,6 +70,7 @@ namespace MessageService.Logic
         {
             if (identification == null)
             {
+                logger.LogWarning("GetMessage() method failed as the identification code was null");
                 throw new ArgumentNullException();
 
             }
@@ -78,6 +82,7 @@ namespace MessageService.Logic
                 views.Add(new SendMessageView(item.senderId, item.identificationCode, item.message, item.type , item.date));
             }
             views.Sort((x, y) => x.date.CompareTo(y.date));
+            logger.LogInformation("GetMessage() method succesfull");
             return views;
         }
 
@@ -87,7 +92,7 @@ namespace MessageService.Logic
                 throw new ArgumentNullException();
 
                 this.repository.DeleteMessage(message);
-                logger.Info("Succesfully removed the message with messageID: " + message.messageId);
+                logger.LogInformation("Succesfully removed the message with messageID: " + message.messageId);
                 return true;
            
            
@@ -97,10 +102,13 @@ namespace MessageService.Logic
         {
             try
             {
-                return this.repository.GetMostRecentMessage(ids);
+                logger.LogInformation("GetMostRecentMessages() method has been called");
+                List<RecentMessageView> messageViews = this.repository.GetMostRecentMessage(ids);
+                logger.LogInformation("GetMostRecentMessages() method was succesfull");
+                return messageViews;
             }catch(Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                logger.LogError("GetMostRecentMessage in ChatLogic came across following error: " + ex.Message);
                 throw new Exception();
             }
         }

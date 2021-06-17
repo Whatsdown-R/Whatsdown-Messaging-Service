@@ -27,23 +27,24 @@ namespace MessageService.Controllers
         private RabbitMQProducer rabbitMQProducer;
         private readonly ILogger<ChatController> logger;
         ChatLogic logic;
-        public ChatController(IConfiguration config, ChatContext context,IHubContext<ChatHub> _context, ILogger<ChatController> logger)
+        public ChatController(IConfiguration config, ChatContext context,IHubContext<ChatHub> _context, ILogger<ChatController> logger, ILoggerFactory loggerFactory)
         {
-            this.logic = new ChatLogic(context);
+            this.logic = new ChatLogic(context, loggerFactory.CreateLogger<ChatLogic>());
             this._config = config;
             this._context = _context;
-            this.logger = logger;
+            this.logger = loggerFactory.CreateLogger<ChatController>();
             //this.rabbitMQProducer = new RabbitMQProducer("amqp://guest:guest@localhost:5672");
         }
 
         [HttpPost, Route("group/join")]
         public IActionResult JoinGroups(JoinGroupView view)
         {
+            logger.LogInformation("JoinGroups() method called");
             try {
                 logger.LogDebug("Trying to join group");
             if (view.connectionId == null || view.groups == null)
             {
-                logger.LogWarning("Tried to joing a group with no arguments");
+                logger.LogWarning("JoinGroups() method failed as there were was a null argument");
                 return BadRequest("Something went wrong.");
             }
             foreach (string item in view.groups)
@@ -57,18 +58,20 @@ namespace MessageService.Controllers
                 return Unauthorized();
             }
 
-
+            logger.LogInformation("JoinGroups() method was succesfull");
             return Ok();
         }
 
         [HttpGet, Route("group/{identificationCode}")]
         public IActionResult GetMessages(string identificationCode)
         {
+            logger.LogInformation("GetMessages() method called");
             try
             {
                 IActionResult response = Unauthorized();
                 List<SendMessageView> messages = logic.GetMessages(identificationCode);
                 response = Ok(new { messages = messages });
+                logger.LogInformation("GetMessages() method was succesfull");
                 return response;
             }
             catch (ArgumentNullException ex)
@@ -85,7 +88,7 @@ namespace MessageService.Controllers
         [HttpPost, Authorize]
         public async Task<IActionResult> PostTextMessage(MessageView view)
         {
-            
+            logger.LogInformation("Log message in the PostTextMessage() method");
             string id = User.FindFirstValue("id");
             IActionResult response;
             try
@@ -99,12 +102,14 @@ namespace MessageService.Controllers
                         " || message = " + result.message + " || Type = " + result.type);
 
                        await _context.Clients.Group(view.IdentificationCode).SendAsync("Groupsend", new SendMessageView(result.senderId, result.identificationCode, result.message, result.type, result.date));
+                    logger.LogInformation("PostTextMessage() method was succesfull");
                     response = Ok();
                 }
                 else
                     response = BadRequest();
             }catch(ArgumentNullException ex)
             {
+                logger.LogInformation("PostTextMessage() method failed. Arguments were null");
                 return BadRequest("Something went wrong");
             } catch(LengthException ex)
             {
@@ -116,6 +121,7 @@ namespace MessageService.Controllers
         [HttpPost, Route("image"),RequestSizeLimit(10000000) , Authorize]
         public async Task<IActionResult> PostImageMessage([FromForm] MessageView view)
         {
+            logger.LogInformation("Log message in the PostImageMessage() method");
             string id = User.FindFirstValue("id");
             try
             {
@@ -158,6 +164,7 @@ namespace MessageService.Controllers
         [HttpPost, Route("friends/recent")]
         public IActionResult GetMostRecentMessages([FromBody]List<string> identificationCode)
         {
+            logger.LogInformation("MostRecentMessages() method called");
             try
             {
                 Console.WriteLine("Attempting to get friend messages");
@@ -165,6 +172,7 @@ namespace MessageService.Controllers
                 IActionResult response = Unauthorized();
                 List<RecentMessageView> messages = logic.GetMostRecentMessages(identificationCode.ToList());
                 response = Ok(new { messages = messages });
+                logger.LogInformation("MostRecentMessages() method succesfull");
                 return response;
             }
             catch (ArgumentNullException ex)
